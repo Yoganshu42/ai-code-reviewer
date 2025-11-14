@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # AI Code Reviewer
 
 ### 🚀 Goal
