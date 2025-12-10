@@ -1,172 +1,156 @@
-AI Code Review Agent
+# 🚀 AI Code Review Agent  
+### _A Transformer-based Automated Reviewer for GitHub Pull Requests_
 
-A transformer-based system that automatically generates high-quality code review comments from GitHub pull request diffs.
-The project builds a clean training dataset from PR comments, formats them into a structured review prompt, and fine-tunes a FLAN-T5 model on GPU using a 300k-example subset for memory efficiency.
-
-🚀 Project Overview
-
-This project focuses on generating automated, human-like code review comments.
-Due to memory constraints, the full dataset was downsampled to 300k curated examples for training.
-
-Key Goals
-
-Extract structured training pairs from GitHub PR diffs.
-
-Fine-tune FLAN-T5-Small on GPU.
-
-Generate structured review comments with reasoning + minimal patch fixes.
-
-Maintain an efficient data pipeline suitable for consumer GPUs.
-
-📦 Features Implemented
-✅ Diff Parsing & Extraction
-
-A custom streaming diff-parser that performs:
-
-Changed-line detection
-
-Adaptive grouping (3–7 lines)
-
-1-line context before & after each changed block
-
-Scoped extraction stopping at next @@ or limit
-
-Indentation normalization only when irregular
-
-Skipping large diff hunks for speed
-
-✅ Final Prompt Format
-
-Each training sample follows:
+The **AI Code Review Agent** is a deep-learning system designed to automatically review GitHub pull requests using a **custom dataset**, **adaptive diff extraction**, and a **fine-tuned FLAN-T5 model**.  
+It generates concise, structured review suggestions following this format:
 
 Suggested Review:
-<rewritten PR comment>
+<rewritten comment>
 
 Reasoning:
 <brief explanation>
 
 Fix:
 Replace these lines:
-<old>
+<old code>
 
 With this:
-<new>
+<new code>
 
+---
 
-Formatting adapts:
+## ✨ Features
 
-Single-line fixes → plain text
+- 🔍 **Diff-aware review generation** (changed-line detection + context extraction)  
+- 🧩 **Adaptive hunk grouping** (3–7 lines, stops at next `@@`)  
+- ✏️ **Consistent PR-review output structure**  
+- 🛠️ **Fine-tuned FLAN-T5 Small** using custom instruction format  
+- 📦 **Notebook-driven training pipeline** (local + Kaggle-compatible)  
+- 🔧 **Supports `.keras` model saving**  
+- 🚦 **Beginner-friendly modular workflow**  
 
-Multi-line fixes → code blocks
+---
 
-✅ Dataset Pipeline
+## 📁 Project Structure
 
-Consists of several notebook stages:
-
-Raw → cleaned comment files
-
-Diff pairing and formatting
-
-Train/val/test split
-
-Tokenization, padding, batching
-
-Batch-shape verification
-
-Final training performed on 300k samples, not full dataset, to fit GPU memory.
-
-✅ Training Pipeline (GPU)
-
-HuggingFace Transformers + PyTorch
-
-Custom collate_fn
-
-Label masking via -100
-
-Gradient clipping
-
-AMP disabled when debugging NaN loss
-
-Model saved in .keras format (preferred)
-
-📁 Project Structure
-
-Below is the uploaded repo structure, with large dataset files removed, and no environment, vector DB, or database folders listed.
-
-ai-code-reviewer/
+```text
+C:\Users\yogan\OneDrive\Desktop\ai-code-reviewer
+│
+├── .ipynb_checkpoints/
+│   Auto-generated Jupyter metadata
 │
 ├── 1.data Loading.ipynb
+│   Raw dataset loading and streaming reader
+│
 ├── 2.data wrangling.ipynb
+│   Cleaning, hunk parsing, change detection
+│
 ├── 3.formatting.ipynb
+│   Prompt construction and target formatting
+│
 ├── 4.train_val_test_split.ipynb
+│   Adaptive splitting and sanity checks
+│
 ├── 5.tokenization_padding_batch_testing.ipynb
+│   Tokenizer, padding, collate_fn batch validation
 │
 ├── code-review-model-training (kaggle_trained).ipynb
+│   Kaggle GPU/TPU training version
+│
 ├── code-review-model-training(full_scale_local_run).ipynb
+│   Local full-scale training loop
+│
 ├── local_model_testing.ipynb
+│   Inference tests using saved .keras model
 │
-├── app/                     # App folder (UI/API for inference)
+├── app/
+│   (Future) PR automation endpoint/scripts
 │
-├── model_download_v3/       # Saved model weights/checkpoints
+├── model_download_v3/
+│   Saved trained model (.keras)
 │
-├── venv/                    # Local virtual environment
+├── venv/
+│   Virtual environment
 │
-├── README.md                # This file
-└── rev-rec-projects.pdf     # Research reference (kept small)
+├── README.md
+│
+└── (All dataset files excluded intentionally)
 
+```
+## 🧠 Model Architecture
 
-NOTE:
-All huge .jsonl, .csv, .feather, and .zip dataset files were removed from this structure because they are too large for GitHub.
+- **Backbone:** FLAN-T5 Small  
+- **Type:** Encoder–Decoder (seq2seq)  
+- **Training Objective:** Next-token prediction over structured review format  
+- **Input:**  
+  - Changed code lines  
+  - Small context window (before + after lines)  
+  - System prompt defining output structure  
+- **Output:**  
+  - Suggested Review  
+  - Reasoning  
+  - Fix instructions with minimal diff replacement  
 
-⚙️ Technologies Used
+---
 
-Python
+## 🏋️ Training Workflow
 
-PyTorch
+### 1️⃣ Data Preparation  
+Performed across Notebooks 1–4:  
+- Stream JSONL → extract PR diffs  
+- Skip extremely large hunks  
+- Group lines adaptively  
+- Build model-ready prompt/label pairs  
+- Split into train/val/test
 
-HuggingFace Transformers (FLAN-T5)
+### 2️⃣ Tokenization  
+- SentencePiece tokenizer (T5 default)  
+- Dynamic padding  
+- Masking labels as `-100` for loss to avoid NaN issues  
 
-Jupyter Notebooks
+### 3️⃣ Training  
+- Runs on **GPU** (P100) or **TPU v5e-8** (Kaggle)  
+- `.keras` checkpointing  
+- Gradient clipping, LR warmup, AMP options  
 
-Virtualenv (not Conda)
+### 4️⃣ Testing  
+- Local inference notebook  
+- Ensure structure formatting correctness  
 
-GPU training (local + Kaggle)
+---
 
-🧪 Model Output Format
+## 📦 Installation
 
-The trained model generates:
+```bash
+git clone https://github.com/<your-username>/ai-code-reviewer
+cd ai-code-reviewer
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+▶️ How to Run Training
+bash
+Copy code
+# Launch Jupyter
+jupyter notebook
+Open one of the training notebooks:
 
-1️⃣ Suggested Review
+code-review-model-training (kaggle_trained).ipynb
 
-A clearer version of the PR comment.
+code-review-model-training(full_scale_local_run).ipynb
+```
+## 🔮 Roadmap
+ Real-time PR integration via GitHub Webhooks
 
-2️⃣ Reasoning
+ Lightweight FastAPI endpoint for review generation
 
-Why the change is needed.
+ Frontend UI for visualizing code diffs
 
-3️⃣ Fix Patch
+ Expand training to multi-language diff datasets
 
-Minimal actionable diff:
+ Add rule-based fallback reviewer
 
-Replace these lines:
-<old>
+### 📝 License
+This project is open-source under the MIT License.
 
-With this:
-<new>
-
-
-Designed for easy integration with future GitHub automation.
-
-🔮 Future Enhancements
-
-Add retrieval-augmented context (vector DB)
-
-Larger model variants (base/large)
-
-Integrate GitHub webhooks for real-time PR review
-
-Web dashboard for analytics
-
-👤 Author
-
-A developer building a real, production-grade ML portfolio with hands-on experimentation, GPU-based training, and structured dataset design.
+### 💬 Contact
+If you want help expanding the repo, optimizing training, or deploying to production, feel free to reach out!
