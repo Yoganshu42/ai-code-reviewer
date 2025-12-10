@@ -1,241 +1,172 @@
-# AI Code Reviewer
+AI Code Review Agent
 
-### 🚀 Goal
-Build an AI-powered tool that reviews code and suggests improvements.
+A transformer-based system that automatically generates high-quality code review comments from GitHub pull request diffs.
+The project builds a clean training dataset from PR comments, formats them into a structured review prompt, and fine-tunes a FLAN-T5 model on GPU using a 300k-example subset for memory efficiency.
 
-### ✨ Core Features
-- Code input box to paste code
-- Model generates review comments
-- Suggests fixes or improvements
-- Deployable web app
+🚀 Project Overview
 
-### 📚 Tech Stack
-- Python
-- CodeBERT / Transformer model
-- FastAPI / Streamlit
-- HuggingFace Spaces / Render deployment
+This project focuses on generating automated, human-like code review comments.
+Due to memory constraints, the full dataset was downsampled to 300k curated examples for training.
 
-### 🗂️ Dataset Approach
-- Use 1 open dataset
-- Add 50–100 curated PR review samples
+Key Goals
 
-### ✅ TODO
-- [ ] Collect dataset
-- [ ] Clean samples
-- [ ] Train / Finetune model
-- [ ] Build API
-- [ ] Deploy UI
-=======
-# rev-rec-data
-A rich data set of source code reviews: data mined from public Gerrit and GitHub repositories. This dataset has been used in the upcoming article Lipcak, J., Rossi, B. (2018) A Large-Scale Study on Source Code Reviewer Recommendation, in 44th Euromicro Conference on Software Engineering and Advanced Applications (SEAA) 2018, IEEE. 
+Extract structured training pairs from GitHub PR diffs.
 
-## Projects:
+Fine-tune FLAN-T5-Small on GPU.
 
-#### Gerrit
+Generate structured review comments with reasoning + minimal patch fixes.
 
-1. android
-https://android-review.googlesource.com/
+Maintain an efficient data pipeline suitable for consumer GPUs.
 
+📦 Features Implemented
+✅ Diff Parsing & Extraction
 
-2. openstack
-https://review.openstack.org/
+A custom streaming diff-parser that performs:
 
+Changed-line detection
 
-3. libreoffice
-https://gerrit.libreoffice.org/
+Adaptive grouping (3–7 lines)
 
+1-line context before & after each changed block
 
-4. qt
-https://codereview.qt-project.org
+Scoped extraction stopping at next @@ or limit
 
+Indentation normalization only when irregular
 
-5. eclipse
-https://git.eclipse.org/r/
+Skipping large diff hunks for speed
 
+✅ Final Prompt Format
 
-6. go
-https://go-review.googlesource.com
+Each training sample follows:
 
+Suggested Review:
+<rewritten PR comment>
 
-7. gwt
-https://gwt-review.googlesource.com
+Reasoning:
+<brief explanation>
 
+Fix:
+Replace these lines:
+<old>
 
-8. kitware
-http://review.source.kitware.com/
+With this:
+<new>
 
 
-9. typo3
-https://review.typo3.org/
+Formatting adapts:
 
+Single-line fixes → plain text
 
-10. scilab
-https://codereview.scilab.org/
+Multi-line fixes → code blocks
 
+✅ Dataset Pipeline
 
-11. chromium
-https://chromium-review.googlesource.com
+Consists of several notebook stages:
 
+Raw → cleaned comment files
 
-12. lineageos
-https://review.lineageos.org/
+Diff pairing and formatting
 
+Train/val/test split
 
-13. gem5
-https://gem5-review.googlesource.com
+Tokenization, padding, batching
 
+Batch-shape verification
 
-14. gerrit
-https://gerrit-review.googlesource.com
+Final training performed on 300k samples, not full dataset, to fit GPU memory.
 
+✅ Training Pipeline (GPU)
 
+HuggingFace Transformers + PyTorch
 
-#### GitHub
+Custom collate_fn
 
-1. angular.js
-https://github.com/angular/angular.js
+Label masking via -100
 
+Gradient clipping
 
-2. angular
-https://github.com/angular/angular
+AMP disabled when debugging NaN loss
 
+Model saved in .keras format (preferred)
 
-3. jquery
-https://github.com/jquery/jquery
+📁 Project Structure
 
+Below is the uploaded repo structure, with large dataset files removed, and no environment, vector DB, or database folders listed.
 
-4. react
-https://github.com/facebook/react
+ai-code-reviewer/
+│
+├── 1.data Loading.ipynb
+├── 2.data wrangling.ipynb
+├── 3.formatting.ipynb
+├── 4.train_val_test_split.ipynb
+├── 5.tokenization_padding_batch_testing.ipynb
+│
+├── code-review-model-training (kaggle_trained).ipynb
+├── code-review-model-training(full_scale_local_run).ipynb
+├── local_model_testing.ipynb
+│
+├── app/                     # App folder (UI/API for inference)
+│
+├── model_download_v3/       # Saved model weights/checkpoints
+│
+├── venv/                    # Local virtual environment
+│
+├── README.md                # This file
+└── rev-rec-projects.pdf     # Research reference (kept small)
 
 
-5. react-native
-https://github.com/facebook/react-native
+NOTE:
+All huge .jsonl, .csv, .feather, and .zip dataset files were removed from this structure because they are too large for GitHub.
 
+⚙️ Technologies Used
 
-6. revealjs
-https://github.com/hakimel/reveal.js
+Python
 
+PyTorch
 
-7. vue
-https://github.com/vuejs/vue
+HuggingFace Transformers (FLAN-T5)
 
+Jupyter Notebooks
 
-8. ionic
-https://github.com/ionic-team/ionic
+Virtualenv (not Conda)
 
+GPU training (local + Kaggle)
 
-9. requests
-https://github.com/requests/requests
+🧪 Model Output Format
 
+The trained model generates:
 
-10. webpack
-https://github.com/webpack/webpack
+1️⃣ Suggested Review
 
+A clearer version of the PR comment.
 
-11. redux
-https://github.com/reactjs/redux
+2️⃣ Reasoning
 
+Why the change is needed.
 
-12. oh-my-zsh
-https://github.com/robbyrussell/oh-my-zsh
+3️⃣ Fix Patch
 
+Minimal actionable diff:
 
-13. atom
-https://github.com/atom/atom
+Replace these lines:
+<old>
 
+With this:
+<new>
 
-14. django
-https://github.com/django/django
 
+Designed for easy integration with future GitHub automation.
 
-15. jekyll
-https://github.com/jekyll/jekyll
+🔮 Future Enhancements
 
+Add retrieval-augmented context (vector DB)
 
-16. laravel
-https://github.com/laravel/laravel
+Larger model variants (base/large)
 
+Integrate GitHub webhooks for real-time PR review
 
-17. material-ui
-https://github.com/callemall/material-ui
+Web dashboard for analytics
 
+👤 Author
 
-18. meteor
-https://github.com/meteor/meteor
-
-
-19. moment
-https://github.com/moment/moment
-
-
-20. swift
-https://github.com/apple/swift
-
-
-21. tensorflow
-https://github.com/tensorflow/tensorflow
-
-
-22. threejs
-https://github.com/mrdoob/three.js
-
-
-23. rxjava
-https://github.com/ReactiveX/RxJava
-
-
-24. homebrew-core
-https://github.com/Homebrew/homebrew-core
-
-
-25. yarn
-https://github.com/yarnpkg/yarn
-
-
-26. brackets
-https://github.com/adobe/brackets
-
-
-27. kubernetes
-https://github.com/kubernetes/kubernetes
-
-
-28. bootstrap
-https://github.com/twbs/bootstrap
-
-
-29. spring-boot
-https://github.com/spring-projects/spring-boot
-
-
-30. opencv
-https://github.com/opencv/opencv
-
-
-31. spark
-https://github.com/apache/spark
-
-
-32. moby
-https://github.com/moby/moby
-
-
-33. cgm-remote-monitor
-https://github.com/nightscout/cgm-remote-monitor
-
-
-34. scikit-learn
-https://github.com/scikit-learn/scikit-learn
-
-
-35. spring-framework
-https://github.com/spring-projects/spring-framework
-
-
-36. bitcoin
-https://github.com/bitcoin/bitcoin
-
-
-37. redis
-https://github.com/antirez/redis
->>>>>>> 6964857 (first code commit)
+A developer building a real, production-grade ML portfolio with hands-on experimentation, GPU-based training, and structured dataset design.
